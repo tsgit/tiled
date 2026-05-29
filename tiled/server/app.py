@@ -255,7 +255,19 @@ def build_app(
         finally:
             await shutdown_event()
 
-    app = FastAPI(lifespan=lifespan, strict_content_type=False)
+    configured_root_path = server_settings.get("root_path", "")
+    _servers = [{"url": "http://localhost:8000", "description": "Local development"}]
+    if configured_root_path:
+        _servers.insert(
+            0, {"url": configured_root_path, "description": "behind proxy path prefix"}
+        )
+    app = FastAPI(
+        lifespan=lifespan,
+        strict_content_type=False,
+        root_path=configured_root_path,
+        root_path_in_servers=bool(configured_root_path),
+        servers=_servers,
+    )
 
     # Healthcheck for deployment to containerized systems, needs to preempt other responses.
     # Standardized for Kubernetes, but also used by other systems.

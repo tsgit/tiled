@@ -298,7 +298,7 @@ def get_router(
                     "self": base_url,
                     "documentation": f"{base_url}/docs",
                 },
-                meta={"root_path": request.scope.get("root_path") or "" + "/api"},
+                meta={"root_path": (request.scope.get("root_path") or "") + "/api"},
             ).model_dump(),
             expires=datetime.now(timezone.utc) + timedelta(seconds=600),
         )
