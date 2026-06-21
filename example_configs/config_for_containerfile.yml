@@ -32,3 +32,15 @@ catalog:
 streaming_cache:
   # Store recent metadata and uploaded data in memory for streaming.
   uri: memory
+
+uvicorn:
+  # Path prefix Tiled is mounted at behind a reverse proxy. Driven by the
+  # TILED_ROOT_PATH environment variable (the Containerfile defaults it to "",
+  # i.e. mounted at the host root). For a deployment behind a path prefix, set
+  # TILED_ROOT_PATH=/tiled-dev and build the UI with a matching
+  # --build-arg TILED_BUILD_PUBLIC_PATH=/tiled-dev/ui/.
+  root_path: "${TILED_ROOT_PATH}"
+  # Trust X-Forwarded-* headers from the proxy so generated URLs use the
+  # external scheme/host.
+  proxy_headers: true
+  forwarded_allow_ips: "*"

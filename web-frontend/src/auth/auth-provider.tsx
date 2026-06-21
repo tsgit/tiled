@@ -3,7 +3,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { AuthContext } from "./auth-context";
 import { tokenManager } from "./token-manager";
 import { UserIdentity } from "./types";
-import { axiosInstance } from "../client";
+import { axiosInstance, defaultApiUrl } from "../client";
 import { components } from "../openapi_schemas";
 
 interface AuthProviderProps {
@@ -32,12 +32,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshPromiseRef = useRef<Promise<boolean> | null>(null);
 
+  // Prefer the server-provided URL (already rewritten to a relative path by
+  // the response interceptor); fall back to the prefix-aware default.
+  const refreshUrl =
+    authentication?.links?.refresh_session ??
+    `${defaultApiUrl}/auth/session/refresh`;
+
   // Shared refresh logic used by both proactive and reactive refresh.
   const doRefresh = useCallback(async (): Promise<boolean> => {
     const refreshToken = tokenManager.getRefreshToken();
     if (!refreshToken) return false;
     try {
-      const resp = await axios.post("/api/v1/auth/session/refresh", {
+      const resp = await axios.post(refreshUrl, {
         refresh_token: refreshToken,
       });
       tokenManager.saveTokens({
@@ -52,7 +58,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       setIdentity(null);
       return false;
     }
-  }, []);
+  }, [refreshUrl]);
 
   // Deduplicated refresh: multiple 401s only trigger one refresh request.
   const refreshOnce = useCallback(async (): Promise<boolean> => {

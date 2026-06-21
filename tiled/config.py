@@ -408,7 +408,14 @@ class Config(BaseSettings):
 
     @property
     def root_path(self) -> str:
-        return self.uvicorn.get("root_path") or ""
+        root_path = self.uvicorn.get("root_path") or ""
+        # os.path.expandvars leaves an *unset* ${VAR} as the literal string
+        # (it only substitutes defined vars). Treat an unexpanded placeholder
+        # as "no prefix" so a config that templates root_path from the
+        # environment behaves sensibly when the variable is absent.
+        if root_path.startswith("${") and root_path.endswith("}"):
+            return ""
+        return root_path
 
     @cached_property
     def merged_trees(self) -> Any:  # TODO: update when # 1047 is merged

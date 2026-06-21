@@ -11,7 +11,13 @@ WORKDIR /src
 COPY web-frontend/package.json web-frontend/package-lock.json ./
 RUN set -ex && npm ci
 COPY web-frontend .
-RUN set -ex && npm run build
+# The public base path the UI is served from. Defaults to "/ui/" (served at
+# the host root). For a deployment behind a reverse-proxy path prefix, pass
+# e.g. --build-arg TILED_BUILD_PUBLIC_PATH=/tiled-dev/ui/ so the built assets
+# and the API URLs the UI derives from import.meta.env.BASE_URL are prefixed.
+# This MUST match the uvicorn.root_path the server is configured with.
+ARG TILED_BUILD_PUBLIC_PATH=/ui/
+RUN set -ex && npm run build -- --base="${TILED_BUILD_PUBLIC_PATH}"
 
 ##########################################################################
 
@@ -119,6 +125,12 @@ RUN mkdir -p /deploy/config
 RUN mkdir -p /storage && chown -R app:app /storage
 COPY ./example_configs/config_for_containerfile.yml /deploy/config
 ENV TILED_CONFIG=/deploy/config
+# Path prefix Tiled is mounted at behind a reverse proxy. Consumed by
+# uvicorn.root_path in the config via ${TILED_ROOT_PATH} expansion. Default ""
+# (mounted at host root); os.path.expandvars has no default syntax, so this
+# must be defined for the unprefixed case. Override at runtime to match the UI
+# build's TILED_BUILD_PUBLIC_PATH, e.g. TILED_ROOT_PATH=/tiled-dev.
+ENV TILED_ROOT_PATH=""
 
 # Copy the pre-built `/app` directory to the runtime container
 # and change the ownership to user app and group app in one step.

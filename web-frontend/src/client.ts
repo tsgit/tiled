@@ -3,6 +3,13 @@ import { components } from "./openapi_schemas";
 
 export const axiosInstance = axios.create();
 
+// The API base path, derived at runtime from the deployment prefix that Vite
+// injects as BASE_URL (e.g. "/ui/" or "/tiled-dev/ui/"). Strip the trailing
+// "ui/" to get the app root, then append the API path. This keeps the UI
+// prefix-agnostic: no source path is hardcoded to a particular proxy prefix.
+export const defaultApiUrl =
+  import.meta.env.BASE_URL.replace(/ui\/?$/, "") + "api/v1";
+
 // Transform absolute URLs in "links" fields to relative paths so the UI
 // works regardless of the origin the server reports.
 function toRelativePath(urlString: string): string {
@@ -119,6 +126,6 @@ export const metadata = async (
 };
 
 export const about = async (): Promise<components["schemas"]["About"]> => {
-  const response = await axiosInstance.get("/api/v1/");
+  const response = await axiosInstance.get(`${defaultApiUrl}/`);
   return response.data;
 };
